@@ -1,0 +1,46 @@
+#!/bin/bash
+##SBATCH --exclusive
+#SBATCH --mem=0
+#SBATCH --job-name=teacher_init_var #whatever name you want
+#SBATCH --output=/shared/projects/project_curlDynamics/clean_code/normalized/rebuttal/teacher_init_var/log_python%x.%j.out # TODO edit the path
+#SBATCH --error=/shared/projects/project_curlDynamics/clean_code/normalized/rebuttal/teacher_init_var/log_python%x.%j.err # TODO edit the path
+##SBATCH --ntasks=50
+##SBATCH --ntasks-per-node=1
+##SBATCH --cpus-per-task=16 # TODO number of cpus you want to use
+##SBATCH --exclude=node50
+#SBATCH --array=0-16
+#SBATCH --partition=lastgen,newgen,gnt,dellgen,secondgen  # secondgen,firstgen,dellgen TODO specify 1 or more partition to use (check partitions with "sinfo")
+#SBATCH --mail-type=END,FAIL # TODO Optionnal, can send you an email when the job ends or fails
+#SBATCH --mail-user hugo.ninou@ens.fr # TODO Optionnal
+#SBATCH --time=72:00:00 # TODO Specify a (generous) time limit
+#SBATCH --qos=high # Specify a higher priority queue if available
+##SBATCH --nice=-1000 # Increase job priority
+
+## MODULES AND CONDA
+# Note : when launching a slurm job, the job running on the node will
+# use a "fresh" environnment, so you need to load everything you need
+# inside this script (exemple with anaconda) :
+module load anaconda
+conda activate ts_env # TODO load your environnment
+
+## RUN COMMANDS
+echo -e "\nSubmission time: $(date)\n"
+echo -e "Submitting from: $(pwd)\n"
+
+#TODO launch the computations you want. He the example is a python script
+# you can use matlab, bash etc...
+# 10 jobs will be launched in parallel, each with a different SLURM_ARRAY_TASK_ID
+# going from 0 to 9 - set by --array=0-9
+# You can then for example map in your code each id to a different dataset
+
+echo This is task $SLURM_ARRAY_TASK_ID
+python teacher_init_var.py $SLURM_ARRAY_TASK_ID
+
+## WRAPUP
+# Output job statistics
+# RSS = resident set size
+# AveRss = average memory usage (estimation..)
+# MaxRss = Max memory usage (estimation..)
+echo -e "\nCompletion time: $(date)\n"
+scontrol show job $SLURM_JOB_ID
+sstat ${SLURM_JOB_ID}.batch --format="AveRSS,MaxRSS"
